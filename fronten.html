@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e0e6ed;
+            border-radius: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .view-toggles {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-btn {
+            padding: 12px 20px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .refresh-btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .content-area {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            min-height: 400px;
+        }
+
+        /* Loading and Error States */
+        .loading, .error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            text-align: center;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .error i {
+            font-size: 3rem;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Table View */
+        .customers-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .customers-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .customers-table td {
+            padding: 20px;
+            border-bottom: 1px solid #e0e6ed;
+            transition: all 0.3s ease;
+        }
+
+        .customers-table tr:hover td {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .order-count {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* Card View */
+        .customers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .customer-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .customer-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .customer-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        .customer-info h3 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 1.3rem;
+        }
+
+        .customer-info p {
+            margin: 0;
+            color: #7f8c8d;
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .no-results i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #667eea;
+        }
+
+        .summary-card h3 {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .summary-card p {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                min-width: auto;
+            }
+
+            .view-toggles {
+                justify-content: center;
+            }
+
+            .customers-table {
+                font-size: 14px;
+            }
+
+            .customers-table th,
+            .customers-table td {
+                padding: 10px;
+            }
+
+            .customers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body ng-app="customerApp" ng-controller="CustomerController">
+    <div class="app-container">
+        <div class="header">
+            <h1><i class="fas fa-users"></i> Customer Management Dashboard</h1>
+            <p>Manage and view your customers with powerful search and filtering capabilities</p>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="summary-stats">
+            <div class="summary-card">
+                <h3>{{customers.length}}</h3>
+                <p><i class="fas fa-users"></i> Total Customers</p>
+            </div>
+            <div class="summary-card">
+                <h3>{{getActiveCustomers()}}</h3>
+                <p><i class="fas fa-user-check"></i> Active Customers</p>
+            </div>
+            <div class="summary-card">
+                <h3>{{getTotalOrders()}}</h3>
+                <p><i class="fas fa-shopping-cart"></i> Total Orders</p>
+            </div>
+            <div class="summary-card">
+                <h3>{{getAverageOrders()}}</h3>
+                <p><i class="fas fa-chart-line"></i> Avg Orders/Customer</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Search customers by name, email, phone, or location..."
+                    ng-model="searchTerm"
+                    ng-change="filterCustomers()">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+            
+            <div class="view-toggles">
+                <button 
+                    class="toggle-btn" 
+                    ng-class="{active: viewMode === 'table'}"
+                    ng-click="setViewMode('table')">
+                    <i class="fas fa-table"></i> Table
+                </button>
+                <button 
+                    class="toggle-btn" 
+                    ng-class="{active: viewMode === 'cards'}"
+                    ng-click="setViewMode('cards')">
+                    <i class="fas fa-th-large"></i> Cards
+                </button>
+            </div>
+
+            <button class="refresh-btn" ng-click="refreshCustomers()" ng-disabled="loading">
+                <i class="fas fa-sync-alt" ng-class="{spin: loading}"></i> Refresh
+            </button>
+        </div>
+
+        <div class="content-area">
+            <!-- Loading State -->
+            <div class="loading" ng-show="loading">
+                <i class="fas fa-spinner"></i>
+                <h3>Loading customers...</h3>
+                <p>Please wait while we fetch your customer data</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="error" ng-show="error && !loading">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error Loading Data</h3>
+                <p>{{error}}</p>
+                <button class="refresh-btn" ng-click="refreshCustomers()" style="margin-top: 15px;">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+
+            <!-- No Results -->
+            <div class="no-results" ng-show="!loading && !error && filteredCustomers.length === 0 && customers.length > 0">
+                <i class="fas fa-search"></i>
+                <h3>No customers found</h3>
+                <p>Try adjusting your search terms</p>
+            </div>
+
+            <!-- Table View -->
+            <div ng-show="!loading && !error && filteredCustomers.length > 0 && viewMode === 'table'">
+                <table class="customers-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> Customer</th>
+                            <th><i class="fas fa-envelope"></i> Email</th>
+                            <th><i class="fas fa-shopping-bag"></i> Orders</th>
+                            <th><i class="fas fa-phone"></i> Phone</th>
+                            <th><i class="fas fa-map-marker-alt"></i> Location</th>
+                            <th><i class="fas fa-info-circle"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="customer in filteredCustomers">
+                            <td>
+                                <strong>{{customer.name}}</strong>
+                            </td>
+                            <td>{{customer.email}}</td>
+                            <td>
+                                <span class="order-count">{{customer.orderCount}}</span>
+                            </td>
+                            <td>{{getCustomerLocation(customer)}}</td>
+                            <td>
+                                <span class="status-badge" ng-class="'status-' + customer.status">
+                                    {{customer.status}}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Card View -->
+            <div class="customers-grid" ng-show="!loading && !error && filteredCustomers.length > 0 && viewMode === 'cards'">
+                <div class="customer-card" ng-repeat="customer in filteredCustomers">
+                    <div class="card-header">
+                        <div class="customer-avatar">
+                            {{getInitials(customer.name)}}
+                        </div>
+                        <div class="customer-info">
+                            <h3>{{customer.name}}</h3>
+                            <p><i class="fas fa-envelope"></i> {{customer.email}}</p>
+                            <p ng-if="customer.phone"><i class="fas fa-phone"></i> {{customer.phone}}</p>
+                            <p ng-if="getCustomerLocation(customer)"><i class="fas fa-map-marker-alt"></i> {{getCustomerLocation(customer)}}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">{{customer.orderCount}}</div>
+                            <div class="stat-label">Orders</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">
+                                <span class="status-badge" ng-class="'status-' + customer.status">
+                                    {{customer.status}}
+                                </span>
+                            </div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; text-align: center; color: #7f8c8d;">
+                        <i class="fas fa-calendar"></i> {{customer.orders.length}} Total Orders
+                        <div ng-if="customer.orders.length > 0" style="margin-top: 10px;">
+                            <small>Recent Orders: 
+                                <span ng-repeat="order in customer.orders | limitTo:3">
+                                    {{order.status}}<span ng-if="!$last">, </span>
+                                </span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        angular.module('customerApp', [])
+        .controller('CustomerController', ['$scope', '$http', '$timeout', function($scope, $http, $timeout) {
+            // Initialize scope variables
+            $scope.customers = [];
+            $scope.filteredCustomers = [];
+            $scope.searchTerm = '';
+            $scope.loading = true;
+            $scope.error = null;
+            $scope.viewMode = 'table';
+
+            // API Configuration
+            const API_BASE_URL = 'http://localhost:8080'; // Change this to your API base URL
+            const USERS_ENDPOINT = API_BASE_URL + '/users/with-orders';
+            const ORDERS_ENDPOINT = API_BASE_URL + '/api/orders';
+
+            // Fetch customers from your API
+            $scope.fetchCustomers = function() {
+                $scope.loading = true;
+                $scope.error = null;
+
+                // Fetch users with their orders from your API
+                $http.get(USERS_ENDPOINT)
+                .then(function(response) {
+                    console.log('API Response:', response.data);
+                    
+                    // Transform API data to match our frontend structure
+                    $scope.customers = response.data.map(function(user) {
+                        return {
+                            id: user.id,
+                            name: user.firstName + ' ' + user.lastName,
+                            email: user.email,
+                            orderCount: user.orders ? user.orders.length : 0,
+                            joinDate: user.createdAt || new Date().toISOString(),
+                            status: user.orders && user.orders.length > 0 ? 'active' : 'inactive',
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                            phone: user.phone,
+                            address: user.address,
+                            city: user.city,
+                            state: user.state,
+                            zipCode: user.zipCode,
+                            country: user.country,
+                            orders: user.orders || []
+                        };
+                    });
+                    
+                    $scope.filteredCustomers = [...$scope.customers];
+                    $scope.loading = false;
+                })
+                .catch(function(error) {
+                    console.error('API Error:', error);
+                    $scope.error = 'Failed to fetch customers from API. Please check your connection and try again.';
+                    $scope.loading = false;
+                    
+                    // Fallback to empty array if API fails
+                    $scope.customers = [];
+                    $scope.filteredCustomers = [];
+                });
+            };
+
+            // Get customer location
+            $scope.getCustomerLocation = function(customer) {
+                const locationParts = [];
+                if (customer.city) locationParts.push(customer.city);
+                if (customer.state) locationParts.push(customer.state);
+                if (customer.country) locationParts.push(customer.country);
+                return locationParts.join(', ') || 'N/A';
+            };
+
+            // Search customers by name, email, or phone
+            $scope.filterCustomers = function() {
+                if (!$scope.searchTerm) {
+                    $scope.filteredCustomers = [...$scope.customers];
+                    return;
+                }
+
+                const searchLower = $scope.searchTerm.toLowerCase();
+                $scope.filteredCustomers = $scope.customers.filter(customer => 
+                    customer.name.toLowerCase().includes(searchLower) ||
+                    customer.email.toLowerCase().includes(searchLower) ||
+                    (customer.phone && customer.phone.toLowerCase().includes(searchLower)) ||
+                    (customer.city && customer.city.toLowerCase().includes(searchLower)) ||
+                    (customer.state && customer.state.toLowerCase().includes(searchLower))
+                );
+            };
+
+            // Set view mode
+            $scope.setViewMode = function(mode) {
+                $scope.viewMode = mode;
+            };
+
+            // Refresh customers
+            $scope.refreshCustomers = function() {
+                $scope.fetchCustomers();
+            };
+
+            // Get customer initials for avatar
+            $scope.getInitials = function(name) {
+                return name.split(' ').map(n => n[0]).join('').toUpperCase();
+            };
+
+            // Format date
+            $scope.formatDate = function(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            };
+
+            // Get active customers count
+            $scope.getActiveCustomers = function() {
+                return $scope.customers.filter(c => c.status === 'active').length;
+            };
+
+            // Get total orders
+            $scope.getTotalOrders = function() {
+                return $scope.customers.reduce((sum, c) => sum + c.orderCount, 0);
+            };
+
+            // Get average orders per customer
+            $scope.getAverageOrders = function() {
+                if ($scope.customers.length === 0) return 0;
+                const avg = $scope.getTotalOrders() / $scope.customers.length;
+                return Math.round(avg * 10) / 10; // Round to 1 decimal place
+            };
+
+            // Initialize the app
+            $scope.fetchCustomers();
+        }]);
+    </script>
+</body>
+</html>
